@@ -1,155 +1,161 @@
 # Compress
 
-**在 Obsidian 里折叠任何笔记：从一屏章节地图，到每一个字。**
+**English** · [简体中文](README.zh-CN.md)
 
-读论文、查资料时，经常要在“先了解大意”和“仔细看这一段”之间来回切换。Compress 把一篇 Markdown 笔记变成五个层级，按一个键就能缩放；遇到看不懂的段落，可以就地看中文译文，或者选中一句话、一个概念，让 AI 结合原文解释。
+**Fold any note in Obsidian, from a one-screen map of its sections down to every word.**
 
-它基于 [TextFold](https://github.com/chenxiachan/textfold)（Apache 2.0）的思路：五级阶梯、“作者原话”和“AI 撰写”分开、每句 AI 写的话都指回它依据的原句。这里用 TypeScript 重新实现成 Obsidian 插件，并加上了逐句翻译和对话式提问。
+Reading papers and references means switching back and forth between "what is this about?" and "let me read this paragraph closely". Compress turns a Markdown note or a PDF into five levels you zoom through with one key. When a paragraph is hard going, read it in translation right where it is, or select a sentence or a concept and ask an AI to explain it against the text.
 
-## 五个层级
+It follows the ideas of [TextFold](https://github.com/chenxiachan/textfold) (Apache 2.0): a five-level ladder, the author's words kept apart from what a model wrote, and every model-written line anchored to the sentences it rests on. Compress reimplements this in TypeScript as an Obsidian plugin, and adds sentence-aligned translation and a chat for questions.
 
-| 键 | 层级 | 每一段变成 | 谁的话 |
+> **Interface language:** the plugin's interface (buttons, commands, settings) is currently in Simplified Chinese. Below, the labels you will see are given in Chinese next to their meaning. Translations and model-written levels can target other languages (Settings › Compress › 阅读语言, reading language).
+
+## Five levels
+
+| Key | Level | Each paragraph becomes | Whose words |
 |:-:|---|---|---|
-| **1** | 全文 | 原样的段落 | 作者 |
-| **2** | 摘句 | 1–3 句关键原句，一字不改 | 作者（AI 挑选） |
-| **3** | 精要 | 这一段的要点和理由 | AI，依据是摘句 |
-| **4** | 要点 | 一行 | AI |
-| **5** | 主题 | 几个词；整篇变成一张章节卡片地图 | AI |
+| **1** | Full (全文) | the paragraph as written | the author's |
+| **2** | Key sentences (摘句) | 1–3 of its sentences, verbatim | the author's, picked by the model |
+| **3** | Brief (精要) | its point and the reason for it | the model's, based on the key sentences |
+| **4** | Takeaway (要点) | one line | the model's |
+| **5** | Topic (主题) | a few words; the whole note becomes a map of section cards | the model's |
 
-- **还没生成层级时也能用**：每段取开头的句子（本地折叠，不调用模型）。点工具栏的 **AI 生成层级** 后，每节一次请求，逐节填进来。
-- **只展开一段**：点击某段，它单独回到全文；再点一次收回。点击节标题，整节展开。
-- **缩放跟着位置走**：用 `1`–`5`、`⌘/Ctrl + 滚轮` 或触控板双指捏合切换层级，鼠标所在的段落保持在原位。
-- **段落角色**：精要和要点层会标出每段在论证中的作用（背景、不足、主张、方法、设置、结果、分析、局限）。
-- **AI 写的段落**左边有一条细线，和作者原话区分开。
+- **Works before any model call.** Until levels are generated, each paragraph folds to its first sentences, locally. Click **AI 生成层级** (generate levels) in the toolbar and the levels fill in section by section, one request per section.
+- **Open just one paragraph.** Click a paragraph to see it in full; click again to fold it back. Click a section heading to open the whole section.
+- **Zoom stays where you are.** Switch levels with `1`–`5`, `⌘/Ctrl + scroll`, or a trackpad pinch; the paragraph under the pointer stays in place.
+- **Roles.** At levels 3 and 4 each paragraph is tagged with its job in the argument: context, gap, claim, method, setup, result, analysis, limitation.
+- **Model-written text is marked** with a thin line at the paragraph's edge, so it is never mistaken for the author's.
 
-## 读 PDF
+## Reading PDFs
 
-Obsidian 本身就能显示 PDF。Compress 再把 PDF 里的文字提取出来，让它也能分层、翻译和提问：
+Obsidian already displays PDFs. Compress also extracts their text, so a PDF can be folded, translated and asked about like a note:
 
-- **直接打开**：在 PDF 上右键 › Compress：分层阅读（或者打开 PDF 后点左侧栏的图层图标）。文字用 Obsidian 自带的 PDF.js 提取，在本机完成，不上传。
-- **版面还原**：双栏按先左后右的顺序读；去掉页眉、页脚和页码；合并行末断开的单词；按字号、字体和编号（如 `3.2`）识别标题。中文 PDF 里常见的“康熙部首”字符（⽂、⻓）会被还原成正常汉字。
-- **不是正文的内容收进折叠块**：作者与单位、图里的文字、表格、公式、脚注和参考文献各自收进可展开的折叠块。它们不算段落，也不会拿去生成层级，不花钱。
-- **和原 PDF 对照**：点段落右侧的 📄 图标，会在旁边打开原 PDF 并跳到这一段所在的页；回答里的 ¶12 引用同样会跳过去。
-- **在 PDF 视图里直接用**：在 Obsidian 的 PDF 视图里选中文字，旁边会出现“翻译 / 解释 / 提问”的工具条（可在设置里关掉）。
-- **提取为笔记**：右键 › Compress：提取文字为笔记，在 PDF 旁边生成一篇 Markdown 笔记，可以编辑、链接和搜索。已经生成的层级和译文按内容缓存，换成笔记后照样能用，不会重复收费。
+- **Open it directly.** Right-click a PDF › **Compress：分层阅读** (layered reading), or open the PDF and click the layers icon in the left ribbon. Text is extracted with the PDF.js that ships with Obsidian, on your computer; nothing is uploaded.
+- **Layout recovery.** Two columns are read left then right; running headers, footers and page numbers are dropped; words hyphenated across lines are joined; headings are recognised by size, font and numbering (`3.2`). Kangxi radical characters that some Chinese PDFs produce (⽂, ⻓) are mapped back to normal characters.
+- **What is not prose goes into collapsed callouts.** Authors and affiliations, text inside figures, tables, equations, footnotes and the references each go into a callout you can expand. They are not paragraphs, so no model is asked to fold them and they cost nothing.
+- **Back to the page.** Click the 📄 icon beside a paragraph to open the PDF next to the reader at that paragraph's page. Citations like ¶12 in answers jump there too.
+- **Inside Obsidian's PDF view.** Select text in Obsidian's own PDF viewer and a small bar offers translate / explain / ask (翻译 / 解释 / 提问). It can be turned off in the settings.
+- **Extract to a note.** Right-click › **Compress：提取文字为笔记** (extract text to a note) writes a Markdown note beside the PDF, which you can edit, link and search. Levels and translations are cached by content, so they carry over to the note at no extra cost.
 
-限制：内置提取读不出公式（PDF 里的公式只是零散排版的符号），扫描版 PDF 也没有文字层。这两种情况用下面的 MinerU。
+Limits: the built-in extraction cannot recover formulas (in a PDF they are just glyphs placed on the page), and scanned PDFs have no text layer. Use MinerU for both.
 
-### 用 MinerU 解析：公式变成 LaTeX
+### Parsing with MinerU: formulas as LaTeX
 
-[MinerU](https://github.com/opendatalab/MinerU) 能把 PDF 里的公式识别成 LaTeX、表格识别成表格，扫描件也能做 OCR。在 PDF 上右键 › **Compress：用 MinerU 解析**，结果存成 PDF 旁边的一篇笔记（带 `compress-source` 属性），图片放在旁边的 `<文件名>.assets/` 文件夹；之后用阅读器打开这个 PDF，会自动读这篇笔记，段落照样能跳回 PDF 的对应页。
+[MinerU](https://github.com/opendatalab/MinerU) recognises formulas as LaTeX and tables as tables, and runs OCR on scans. Right-click a PDF › **Compress：用 MinerU 解析** (parse with MinerU). The result is saved as a note beside the PDF (with a `compress-source` property), its images in a `<name>.assets/` folder. From then on, opening the PDF in the reader reads that note, and its paragraphs still jump back to their PDF pages.
 
-两种用法，在 **设置 › Compress › PDF 解析** 里选：
+Two ways to run it, chosen in **Settings › Compress › PDF 解析（MinerU）** (PDF parsing):
 
-| | 云端 API（推荐先用） | 本机 mineru-kit |
+| | Cloud API (start here) | Local `mineru-kit` |
 |---|---|---|
-| 准备 | 在 [mineru.net](https://mineru.net/apiManage/docs) 登录，在 API 管理里创建 Token，填进设置 | `uv pip install -U "mineru>=4.0,<5"`（Python 3.10–3.14），首次解析下载约 3.4 GB 模型 |
-| 速度与额度 | 每账号每天 2000 页高优先级额度；单个文件不超过 200 MB、200 页 | 不限量，速度取决于电脑（Apple 芯片建议 16 GB 以上内存） |
-| 隐私 | PDF 会上传到 MinerU 的服务器 | 不离开本机 |
-| 平台 | 桌面和手机都能用 | 只能在桌面版用 |
+| Setup | Sign in at [mineru.net](https://mineru.net/apiManage/docs), create a token under API management, paste it into the settings | `uv pip install -U "mineru>=4.0,<5"` (Python 3.10–3.14); the first parse downloads about 3.4 GB of models |
+| Limits | 2,000 pages a day at top priority per account; files up to 200 MB and 200 pages | none; speed depends on your computer (16 GB or more of memory recommended on Apple silicon) |
+| Privacy | the PDF is uploaded to MinerU's servers | nothing leaves your computer |
+| Platforms | desktop and mobile | desktop only |
 
-本机方式默认用 `advanced` 档位（公式为 LaTeX）；`flash` 最快但公式是图片。从程序坞启动的 Obsidian 可能找不到 `mineru-kit` 命令，这时在设置里填它的完整路径（终端里 `which mineru-kit`）。
+Locally the `advanced` tier is used by default (formulas as LaTeX); `flash` is fastest but gives formulas as images. Obsidian started from the Dock may not find the `mineru-kit` command; in that case enter its full path in the settings (run `which mineru-kit` in a terminal).
 
-### 让 AI 讲解公式
+### Asking the AI about a formula
 
-- 阅读器里，鼠标移到独立公式上，点 Σ 图标“讲解这个公式”；段落里的行内公式，直接点它。也可以复制它的 LaTeX。
-- 问答面板会收到这个公式的 LaTeX 原文和它所在的段落，先说它在算什么，再逐个解释符号（优先用文中的定义，并标出出处段落），然后讲直观含义和它在文中的作用。文中没有定义的符号，会说明是按通常含义解释的。
-- 在编辑器里选中一段 LaTeX 源码，右键 › Compress：解释选中内容，也能用。
+- In the reader, hover a display formula and click the Σ icon (讲解这个公式, explain this formula); click an inline formula inside a paragraph. You can also copy its LaTeX.
+- The chat receives the formula's LaTeX and the paragraph it belongs to. The answer says what the formula computes, goes through its symbols (using the document's own definitions and citing the paragraph that gives them), then the intuition and the formula's role in the document. A symbol the document does not define is explained by its usual meaning, and said to be so.
+- In the editor, select LaTeX source and right-click › **Compress：解释选中内容** (explain selection).
 
-## 中文翻译
+## Translation
 
-- **整篇切换**：工具栏的 **原文 / 对照 / 中文**（快捷键 `L`）。译文逐句对齐原文，所以“摘句”层也能显示对应的中文句子；精要、要点、主题三层在生成层级时直接附带中文版本，不需要另外翻译。
-- **只看一段**：鼠标移到段落上，点 🌐 图标，在段落下方显示这一段的译文。
-- **选中即译**：在阅读器、编辑器或阅读模式里选中文字，点 **翻译**（或右键 › Compress：翻译选中内容），旁边弹出译文，可以继续“解释”或“追问”。
-- **术语表**：在设置里写 `attention = 注意力`，翻译时固定用这个译法。
-- 阅读语言可以在设置里改成繁体中文、英语、日语等。
+- **The whole note.** Switch between 原文 / 对照 / 简体中文 (original / side by side / translation; the third button is named after your reading language) in the toolbar, or press `L`. Translations are aligned sentence by sentence with the original, so level 2 shows the matching translated sentences; levels 3–5 are written in both languages when the levels are generated, with no separate translation step.
+- **One paragraph.** Hover a paragraph and click 🌐 to show its translation underneath.
+- **A selection.** Select text in the reader, the editor or reading view and click **翻译** (translate), or right-click › **Compress：翻译选中内容**. The translation pops up beside it, and you can go on to explain or ask.
+- **Glossary.** Add lines like `attention = 注意力` in the settings to fix how terms are translated.
+- The reading language defaults to Simplified Chinese and can be changed to Traditional Chinese, English, Japanese and others.
 
-## 问 AI
+## Asking questions
 
-- 选中一个概念或句子，点 **解释** 或 **提问**；或者点段落右侧的对话图标，就这一段提问；工具栏的对话图标是就全文提问。
-- 右侧面板里可以连续追问。快捷按钮：解释、翻译并讲解、说简单点、举个例子、在文中的作用；全文层面有核心观点、论证结构、值得追问。
-- 回答先给结论，再给依据，并用 **¶12** 标出依据的原文段落，点一下就跳到阅读器里那一段并高亮。
-- 不超过 6 万字符的笔记整篇交给模型；更长的只发章节地图、你所在的段落和与问题相关的段落。
-- **保存为笔记**：把这次问答存成一篇 Markdown，带回原笔记的链接。
+- Select a concept or sentence and click **解释** (explain) or **提问** (ask); click the chat icon beside a paragraph to ask about that paragraph; the chat icon in the toolbar asks about the whole note.
+- Follow-up questions continue in the side panel. Quick buttons: explain, translate and explain, say it simply, give an example, role in the text; for the whole note: core argument, structure, questions worth asking.
+- Answers give the conclusion first, then the grounds, citing the paragraphs they rest on as **¶12**; click one to jump to that paragraph in the reader and highlight it.
+- A note up to 60,000 characters is sent whole; a longer one is sent as its section map, the paragraphs around you, and the paragraphs that match the question.
+- **Save as note** (保存为笔记) stores the conversation as Markdown, with a link back to the source.
 
-## 安装
+## Installation
 
-目前需要手动安装：
+Compress is not in the Obsidian community plugin directory yet, so it is installed by hand.
+
+**From a release.** Download `main.js`, `manifest.json` and `styles.css` from this repository's Releases into `.obsidian/plugins/compress/` in your vault, then enable Compress under **Settings › Community plugins**. Once the repository has a release, the [BRAT](https://github.com/TfTHacker/obsidian42-brat) plugin can also install and update it from this repository's URL.
+
+**From source.**
 
 ```bash
 npm install
 npm run build
 ```
 
-把 `main.js`、`manifest.json`、`styles.css` 三个文件复制到你的库里的 `.obsidian/plugins/compress/`，然后在 **设置 › 第三方插件** 里启用 Compress。
+Then copy the generated `main.js` together with `manifest.json` and `styles.css` into the folder above. While developing, `npm run dev` rebuilds `main.js` whenever the source changes.
 
-开发时可以运行 `npm run dev`，它会在源码变化时重新构建 `main.js`。
+## Connecting a model
 
-## 连接模型
+In **Settings › Compress › 服务商** (provider), pick a provider, enter its API key and a model name (**获取列表** fetches the provider's model list), then **测试连接** (test connection).
 
-**设置 › Compress › 服务商**，选一个，填 API Key 和模型名（可以点 **获取列表** 从服务商取回可用模型），再点 **测试连接**。
-
-| 服务商 | 说明 |
+| Provider | Notes |
 |---|---|
-| DeepSeek、通义千问、智谱 GLM、Kimi、硅基流动、OpenAI、OpenRouter | OpenAI 兼容接口，只需要 Key 和模型名 |
-| Anthropic Claude | 官方 SDK，默认模型 `claude-opus-5-5`；生成层级用结构化输出，保证返回合法 JSON |
-| Ollama | 本地模型，不需要 Key |
-| 自定义 | 任何 OpenAI 兼容接口，填接口地址即可 |
+| DeepSeek, Qwen (Alibaba Bailian), Zhipu GLM, Kimi, SiliconFlow, OpenAI, OpenRouter | OpenAI-compatible: a key and a model name are all it needs |
+| Anthropic Claude | through the official SDK, default model `claude-opus-5-5`; levels are requested as structured output, so the JSON is always valid |
+| Ollama | local models, no key |
+| Custom (自定义) | any OpenAI-compatible endpoint: enter its base URL |
 
-- 可以给“回答问题”单独设置一个更强的模型（**问答模型**）。
-- 使用 Claude 官方接口时，插件会开启服务端回退（`fallbacks: "default"`）：如果模型出于安全策略拒绝某个请求，Anthropic 会自动改用推荐的备用模型回答。走代理地址时不开启。
-- 个别服务商在 Obsidian 里不允许跨域的流式请求，插件会自动改成一次性返回，回答会在写完后整段出现。
+- A stronger model can be set for answering questions only (**问答模型**, Q&A model).
+- With Claude's official endpoint, server-side fallback is on (`fallbacks: "default"`): if the model declines a request on policy grounds, Anthropic answers it with its recommended fallback model. It is off when a proxy URL is set.
+- Some providers do not allow cross-origin streaming from Obsidian; the plugin then falls back to a single response, and the answer appears when it is complete.
 
-## 费用、缓存和隐私
+## Cost, cache and privacy
 
-- 生成层级：每节一次请求（长的节分几次），一篇一万词的论文大约是十几次请求、两三万 token 的输入。翻译全文的花费和原文长度相当。
-- 生成的层级和译文按**内容**缓存在 `.obsidian/plugins/compress/cache/`：重新打开、重命名笔记都不会再花钱；改了某一段，只有那一节需要重新生成。设置里可以清除缓存。
-- 你阅读、翻译或提问的内容会发给你选择的服务商。API Key 明文保存在 `.obsidian/plugins/compress/data.json`；如果你的库用 Git 或云盘同步，请注意这个文件。
+- Levels: one request per section (long sections in parts); a 10,000-word paper takes a dozen or so requests and 20–30k input tokens. Translating a whole note costs about as much as its length.
+- Levels and translations are cached by **content** in `.obsidian/plugins/compress/cache/`: reopening or renaming a note costs nothing, and editing a paragraph regenerates only its section. The cache can be cleared in the settings.
+- What you read, translate or ask about is sent to the provider you chose. API keys are stored in plain text in `.obsidian/plugins/compress/data.json`; take care if your vault is synced with Git or a cloud drive.
 
-## 命令和快捷键
+## Commands
 
-在 **设置 › 快捷键** 里搜索 “Compress” 可以给这些命令绑定快捷键：
+Search for "Compress" in **Settings › Hotkeys** to bind any of these:
 
-| 命令 | 作用 |
+| Command (as shown) | What it does |
 |---|---|
-| 分层阅读当前笔记 | 在旁边打开阅读器，Markdown 和 PDF 都可以（也可以点左侧栏的图层图标，或右键文件） |
-| 用 MinerU 解析 PDF（识别公式和表格） | 用 MinerU 把 PDF 转成带 LaTeX 公式的笔记 |
-| 把 PDF 的文字提取为笔记 | 用内置提取在 PDF 旁边生成一篇 Markdown 笔记 |
-| 为当前笔记生成层级（AI） | 给还没有层级的节生成层级 |
-| 翻译当前笔记全文 | 逐句翻译整篇 |
-| 切换到层级 1–5 | 和阅读器里按数字键一样 |
-| 切换 原文 / 对照 / 译文 | 和阅读器里按 `L` 一样 |
-| 翻译选中内容 / 解释选中内容 / 就选中内容提问 | 编辑器、阅读模式、阅读器里都能用 |
-| 就当前笔记提问 | 打开问答面板，针对全文 |
+| 分层阅读当前笔记 | open the reader beside the current note or PDF (also: the layers icon in the ribbon, or right-click a file) |
+| 用 MinerU 解析 PDF（识别公式和表格） | parse the PDF with MinerU into a note with LaTeX formulas |
+| 把 PDF 的文字提取为笔记 | extract the PDF's text into a note beside it, with the built-in extractor |
+| 为当前笔记生成层级（AI） | generate the levels of sections that do not have them yet |
+| 翻译当前笔记全文 | translate the whole note, sentence by sentence |
+| 切换到层级 1–5 | the same as pressing a digit in the reader |
+| 切换 原文 / 对照 / 译文 | the same as pressing `L` in the reader |
+| 翻译选中内容 / 解释选中内容 / 就选中内容提问 | translate / explain / ask about the selection; in the editor, reading view and the reader |
+| 就当前笔记提问 | open the chat for the whole note |
 
-## 与 TextFold 的区别
+## How it differs from TextFold
 
-TextFold 是一个独立的阅读器（Python 服务 + 网页），能读 arXiv、PDF、Word、Zotero 等来源。Compress 只读 Obsidian 里的 Markdown 笔记，把相同的分层阅读方式搬进 Obsidian，并加上：
+TextFold is a standalone reader (a Python server and a web page) for arXiv, PDF, Word, Zotero and more. Compress reads the Markdown notes and PDFs in your Obsidian vault, brings the same layered reading into Obsidian, and adds:
 
-- 段落级、选区级和整篇的逐句翻译，原文 / 对照 / 译文三种显示；
-- 右侧的对话面板，可以连续追问，回答引用原文段落；
-- 支持国内常用的模型服务商。
+- sentence-aligned translation of a paragraph, a selection or a whole note, shown as original, side by side or translation;
+- a chat panel for follow-up questions, with answers citing the paragraphs they rest on;
+- support for model providers widely used in China.
 
-TextFold 里词语在层级之间滑动的动画、段落之间的论证关系图，这里还没有实现。
+TextFold's animation of words sliding between levels and its graph of how paragraphs support each other are not implemented here.
 
-## 开发
+## Development
 
 ```bash
-npm run build   # 类型检查并打包
-npm test        # 单元测试和接口测试（用本地模拟服务器，不花钱）
+npm run build   # type-check and bundle
+npm test        # unit and API tests (against local mock servers; no API cost)
 ```
 
-源码结构：
+Layout of the source:
 
 ```
-src/core/      解析 Markdown、切句、五级折叠、缓存、PDF 版面还原（不依赖 Obsidian）
-src/ai/        提示词、模型调用（OpenAI 兼容 / Anthropic SDK）、批量生成
-src/ui/        阅读器、问答面板、翻译浮窗、选区工具条
-src/pdf.ts     用 Obsidian 自带的 PDF.js 读出每页的文字块
-src/mineru.ts  调用 MinerU（云端 API 或本机 mineru-kit），把结果存成笔记
-src/main.ts    插件入口：命令、菜单、任务进度
+src/core/      Markdown parsing, sentence splitting, the five levels, the cache, PDF layout recovery (no Obsidian APIs)
+src/ai/        prompts, model calls (OpenAI-compatible / Anthropic SDK), batch generation
+src/ui/        the reader, the chat panel, the translation popover, the selection bar
+src/pdf.ts     reads each page's text items with Obsidian's bundled PDF.js
+src/mineru.ts  runs MinerU (cloud API or local mineru-kit) and saves the result as a note
+src/main.ts    the plugin: commands, menus, job progress
 ```
 
-## 许可
+## License
 
-Apache License 2.0，见 [LICENSE](LICENSE) 和 [NOTICE](NOTICE)。
+Apache License 2.0; see [LICENSE](LICENSE) and [NOTICE](NOTICE).
