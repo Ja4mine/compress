@@ -1,0 +1,25 @@
+{
+  "name": "compress",
+  "version": "0.1.0",
+  "description": "Fold any note from a one-screen map down to every word, translate it sentence by sentence, and ask AI about any passage. An Obsidian plugin built on TextFold's ideas.",
+  "main": "main.js",
+  "private": true,
+  "scripts": {
+    "dev": "node esbuild.config.mjs",
+    "build": "tsc --noEmit --skipLibCheck && node esbuild.config.mjs production",
+    "test": "node tests/run.mjs"
+  },
+  "license": "Apache-2.0",
+  "devDependencies": {
+    "@types/node": "^26.6.5",
+    "esbuild": "^0.28.2",
+    "obsidian": "^1.14.4",
+    "pdfjs-dist": "^6.4.299",
+    "tslib": "^2.8.1",
+    "typescript": "^7.0.2"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.135.0",
+    "fflate": "^0.8.3"
+  }
+}

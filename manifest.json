@@ -1,0 +1,9 @@
+{
+  "id": "compress",
+  "name": "Compress",
+  "version": "0.1.0",
+  "minAppVersion": "1.5.0",
+  "description": "Fold a note from a one-screen map down to every word, read it in Chinese sentence by sentence, and ask AI about any passage.",
+  "author": "chenyu",
+  "isDesktopOnly": false
+}

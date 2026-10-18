@@ -1,0 +1,18 @@
+Compress
+Copyright 2026 chenyu
+
+This product is derived from TextFold (https://github.com/chenxiachan/textfold),
+Copyright 2026 Xia Chen, licensed under the Apache License, Version 2.0 (see LICENSE).
+
+Adapted from TextFold, with changes, for Obsidian:
+- the five reading levels (Full, Key, Brief, Takeaway, Topic) and the split between the
+  author's words and a model's (textfold/ladder.py, docs/format.md);
+- the prompts that write the levels and the sentence-aligned translations
+  (textfold/ladder.py, textfold/translate.py), extended to write the short levels in two
+  languages at once;
+- the local fold of a text by its first sentences (plugins/textfold/hooks/fold.ts);
+- the question prompt that cites paragraphs by number (textfold/notes.py).
+The code is a new TypeScript implementation; the Markdown parser, the Obsidian views, the
+translation views, the chat and the model clients are new.
+
+It bundles the Anthropic TypeScript SDK (@anthropic-ai/sdk, MIT License).
